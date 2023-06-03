@@ -17,28 +17,23 @@ class Tappersonio(Tap):
     # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "auth_token",
+            "client_id",
             th.StringType,
             required=True,
-            secret=True,  # Flag config as protected.
-            description="The token to authenticate against the API service",
+            secret=True, 
+            description="The client id to authenticate against the Personio API",
         ),
         th.Property(
-            "project_ids",
-            th.ArrayType(th.StringType),
+            "client_secret",
+            th.StringType,
             required=True,
-            description="Project IDs to replicate",
+            secret=True,
+            description="The client secret to authenticate against the Personio API",
         ),
         th.Property(
             "start_date",
             th.DateTimeType,
             description="The earliest record date to sync",
-        ),
-        th.Property(
-            "api_url",
-            th.StringType,
-            default="https://api.mysample.com",
-            description="The url for the API service",
         ),
     ).to_dict()
 
@@ -49,8 +44,7 @@ class Tappersonio(Tap):
             A list of discovered streams.
         """
         return [
-            streams.GroupsStream(self),
-            streams.UsersStream(self),
+            streams.EmployeesStream(self),
         ]
 
 

@@ -11,7 +11,7 @@ from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TCH002
 from singer_sdk.streams import RESTStream
 
-from tap_personio.auth import personioAuthenticator
+from tap_personio.auth import PersonioAuthenticator
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -22,14 +22,13 @@ _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 
-class personioStream(RESTStream):
+class PersonioStream(RESTStream):
     """personio stream class."""
 
     @property
     def url_base(self) -> str:
-        """Return the API URL root, configurable via tap settings."""
-        # TODO: hardcode a value here, or retrieve it from self.config
-        return "https://api.mysample.com"
+        """Return the API URL root"""
+        return "https://api.personio.de/v1"
 
     records_jsonpath = "$[*]"  # Or override `parse_response`.
 
@@ -43,7 +42,7 @@ class personioStream(RESTStream):
         Returns:
             An authenticator instance.
         """
-        return personioAuthenticator.create_for_stream(self)
+        return PersonioAuthenticator.create_for_stream(self)
 
     @property
     def http_headers(self) -> dict:
@@ -53,8 +52,7 @@ class personioStream(RESTStream):
             A dictionary of HTTP headers.
         """
         headers = {}
-        if "user_agent" in self.config:
-            headers["User-Agent"] = self.config.get("user_agent")
+        
         return headers
 
     def get_new_paginator(self) -> BaseAPIPaginator:
