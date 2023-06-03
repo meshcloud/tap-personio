@@ -12,22 +12,15 @@ class EmployeesDiscoveryStream(PersonioStream):
     name = "employees"
     path = "/company/employees"
     primary_keys = ["id"]
+    replication_key = None
+
+    records_jsonpath = "$.data[*].attributes"
 
     @property
     def schema(self):
         return th.PropertiesList().to_dict()
 
-class EmployeesStream(PersonioStream):
-    """Define custom stream."""
-
-    name = "employees"
-    path = "/company/employees"
-    primary_keys = ["id"]
-    replication_key = None
-    # Optionally, you may also use `schema_filepath` in place of `schema`:
-    
-    # schema_filepath = SCHEMAS_DIR / "users.json"  # noqa: ERA001
-    
+class EmployeesStream(EmployeesDiscoveryStream):
     discovered_schema = None
 
     @property
@@ -38,9 +31,7 @@ class EmployeesStream(PersonioStream):
 
         if self.discovered_schema != None:
             return self.discovered_schema
-
-        self.logger.info("DISCOVERING SCHEMA")
-        
+   
         properties: List[th.Property] = []
         
         # id is mandatory and always present, the rest depends on the configuration of the API token
@@ -52,7 +43,11 @@ class EmployeesStream(PersonioStream):
             )
         )
 
-
+        # hack: we have to discover the schema dynmically based on the data that's coming off personio
+        # however, we can't just make an http request from this class instance since .schema is called from the 
+        # ctor (bad! never call a virtual function from a ctor...) and thus all the http stuff is not initialized yet.
+        # We therefore create a separate instance of our base class that has a purposefully empty schema to make that 
+        # request, then build our schema off of that.
         hack = EmployeesDiscoveryStream(self._tap, "discover_employees", {}, None)
 
         for records in hack.request_records(None):
@@ -67,7 +62,5 @@ class EmployeesStream(PersonioStream):
             
         self.discovered_schema = th.PropertiesList(*properties).to_dict()
         return self.discovered_schema
-    
-    records_jsonpath = "$.data[*].attributes"
 
     
