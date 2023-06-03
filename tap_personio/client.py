@@ -1,4 +1,4 @@
-"""REST client handling, including personioStream base class."""
+"""REST client handling, including PersonioStream base class."""
 
 from __future__ import annotations
 
@@ -19,11 +19,9 @@ else:
     from cached_property import cached_property
 
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
-SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
-
 
 class PersonioStream(RESTStream):
-    """personio stream class."""
+    """Personio stream class."""
 
     @property
     def url_base(self) -> str:

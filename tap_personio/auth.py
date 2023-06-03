@@ -6,14 +6,16 @@ import requests
 from singer_sdk.helpers._util import utc_now
 from singer_sdk.authenticators import OAuthAuthenticator, SingletonMeta
 
-
-# The SingletonMeta metaclass makes your streams reuse the same authenticator instance.
-# If this behaviour interferes with your use-case, you can remove the metaclass.
-class PersonioAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
+# Personio API tokens beahve like OTPs:
+# "The bearer token can then used to access any Personnel Data endpoint (i.e. all endpoints except Auth and Recruiting)
+#  but please note that the bearer token can be used for only one request and is blacklisted immediately after its use.
+# https://developer.personio.de/reference/auth
+class PersonioAuthenticator(OAuthAuthenticator):
     """Authenticator class for personio."""
 
     @property
     def oauth_request_body(self) -> dict:
+        
         """Define the OAuth request body for the Personio API.
 
         Returns:
@@ -31,6 +33,8 @@ class PersonioAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
         Raises:
             RuntimeError: When OAuth login fails.
         """
+        self.logger.warn("UPDATING ACCES TOKEN")
+
         request_time = utc_now()
         auth_request_payload = self.oauth_request_payload
         token_response = requests.post(
@@ -48,13 +52,7 @@ class PersonioAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
 
         token_json = token_response.json()
         self.access_token = token_json["data"]["token"]
-        self.expires_in = token_json.get("expires_in", self._default_expiration)
-        if self.expires_in is None:
-            self.logger.debug(
-                "No expires_in receied in OAuth response and no "
-                "default_expiration set. Token will be treated as if it never "
-                "expires.",
-            )
+        self.expires_in = 0; # immediately expire the token        
         self.last_refreshed = request_time
 
     
