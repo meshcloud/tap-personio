@@ -33,7 +33,7 @@ class PersonioAuthenticator(OAuthAuthenticator):
         Raises:
             RuntimeError: When OAuth login fails.
         """
-        self.logger.warn("UPDATING ACCES TOKEN")
+        self.logger.warning("UPDATING ACCES TOKEN")
 
         request_time = utc_now()
         auth_request_payload = self.oauth_request_payload

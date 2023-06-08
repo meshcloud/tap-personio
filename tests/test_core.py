@@ -8,7 +8,8 @@ from tap_personio.tap import Tappersonio
 
 SAMPLE_CONFIG = {
     "start_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    # TODO: Initialize minimal tap config
+    "client_id": "abc",
+    "client_secret": "xyz"
 }
 
 

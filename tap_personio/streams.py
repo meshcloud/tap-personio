@@ -1,26 +1,32 @@
 """Stream type classes for tap-personio."""
 
 from __future__ import annotations
+from array import array
+import re
 
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_personio.client import PersonioStream
 
-class EmployeesDiscoveryStream(PersonioStream):
-    """Define custom stream."""
-
-    name = "employees"
-    path = "/company/employees"
+class EmployeeAttributesStream(PersonioStream):
+    name = "employee_attributes"
+    path = "/company/employees/attributes"
     primary_keys = ["id"]
     replication_key = None
 
-    records_jsonpath = "$.data[*].attributes"
+    records_jsonpath = "$.data[*]"
 
     @property
     def schema(self):
         return th.PropertiesList().to_dict()
 
-class EmployeesStream(EmployeesDiscoveryStream):
+class EmployeesStream(PersonioStream):
+    name = "employee"
+    path = "/company/employees"
+    primary_keys = ["id"]
+    records_jsonpath = "$.data[*].attributes"
+    replication_key = None
+
     discovered_schema = None
 
     @property
@@ -48,19 +54,62 @@ class EmployeesStream(EmployeesDiscoveryStream):
         # ctor (bad! never call a virtual function from a ctor...) and thus all the http stuff is not initialized yet.
         # We therefore create a separate instance of our base class that has a purposefully empty schema to make that 
         # request, then build our schema off of that.
-        hack = EmployeesDiscoveryStream(self._tap, "discover_employees", {}, None)
+        discovery = EmployeeAttributesStream(self._tap, None, None)
+    
+        records = [x for x in discovery.request_records(None)]
 
-        for records in hack.request_records(None):
-            first_record = records["data"][0]
+        for attr in discovery.request_records(None):
+            personio_type = attr["type"]
+            personio_id = attr["universal_id"] or attr["label"].lower()
+            
+            # see https://developer.personio.de/reference/get_company-employees-attributes
+            json_type = th.StringType()
+            if (personio_type == "integer"):
+                json_type = th.IntegerType()
+            elif personio_type == "decimal":
+                json_type = th.NumberType()
+            elif personio_type == "tags":
+                json_type = th.ArrayType(th.StringType)
+            elif personio_type == "date":
+                json_type = th.DateTimeType()
+            elif personio_id == "department":
+                json_type = th.ObjectType(
+                    th.Property("id", th.IntegerType()), 
+                    th.Property("name", th.StringType())
+                )
+            elif personio_id == "cost_centers":
+                json_type = th.ArrayType(
+                    th.ObjectType(
+                        th.Property("id", th.IntegerType()),
+                        th.Property("name", th.StringType()),
+                        th.Property("percentage", th.NumberType())
+                    )
+                )
+            # note: the PersonioAPI is a mess, we probably need more here
 
-            if first_record:
-                for attr in first_record["attributes"]:
-                    properties.append(th.Property(attr, th.StringType()))            
-
-            # we always abort the iterator after fetching the first record
-            break
+            properties.append(th.Property(personio_id, json_type, description=attr["label"]))            
             
         self.discovered_schema = th.PropertiesList(*properties).to_dict()
+
         return self.discovered_schema
 
-    
+    def post_process(self, row: dict, context: dict | None = None) -> dict | None: 
+        result = dict()
+
+        # flatten the "meta" attributes into something more closely resembling a record
+        for key in row:
+            attr = row[key]
+
+            value = attr["value"]
+            is_object_type = type(value) is dict and "attributes" in value
+            is_array_type = type(value) is list
+            
+            personio_id = attr["universal_id"] or attr["label"].lower()
+            if is_object_type:
+                result[personio_id] = value["attributes"]
+            elif is_array_type:
+                result[personio_id] = [x["attributes"] for x in value]
+            else:
+                result[personio_id] = value
+
+        return result
