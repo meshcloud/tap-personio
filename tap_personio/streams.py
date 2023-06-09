@@ -77,6 +77,11 @@ class EmployeesStream(PersonioStream):
                     th.Property("id", th.IntegerType()), 
                     th.Property("name", th.StringType())
                 )
+            elif personio_id == "team":
+                json_type = th.ObjectType(
+                    th.Property("id", th.IntegerType()), 
+                    th.Property("name", th.StringType())
+                )
             elif personio_id == "cost_centers":
                 json_type = th.ArrayType(
                     th.ObjectType(
