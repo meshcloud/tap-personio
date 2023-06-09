@@ -52,7 +52,7 @@ class PersonioAuthenticator(OAuthAuthenticator):
 
         token_json = token_response.json()
         self.access_token = token_json["data"]["token"]
-        self.expires_in = 0; # immediately expire the token        
+        self.expires_in = -1; # immediately expire the token        
         self.last_refreshed = request_time
 
     
