@@ -4,46 +4,40 @@
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
-<!--
-
-Developer TODO: Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPi repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
-
 ## Installation
-
-Install from PyPi:
-
-```bash
-pipx install tap-personio
-```
 
 Install from GitHub:
 
 ```bash
-pipx install git+https://github.com/ORG_NAME/tap-personio.git@main
+pipx install git+https://github.com/meshcloud/tap-personio.git@main
 ```
 
--->
+## Capabilities
 
-## Configuration
+* `catalog`
+* `state`
+* `discover`
+* `about`
+* `stream-maps`
+* `schema-flattening`
 
-### Accepted Config Options
+At this moment the tap only supports the [employees](https://developer.personio.de/reference/get_company-employees) 
+resource. The tap will automatically emit a dynamic schema based on the attributes available, leveraging the
+`universal_id` of personio attributes as column names.
 
-<!--
-Developer TODO: Provide a list of config options accepted by the tap.
+## Settings
 
-This section can be created by copy-pasting the CLI output from:
+| Setting             | Required | Default | Description |
+|:--------------------|:--------:|:-------:|:------------|
+| client_id           | True     | None    | The client id to authenticate against the Personio API |
+| client_secret       | True     | None    | The client secret to authenticate against the Personio API |
+| start_date          | False    | None    | The earliest record date to sync |
+| stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
+| stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
+| flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
+| flattening_max_depth| False    | None    | The max depth to flatten schemas. |
 
-```
-tap-personio --about --format=markdown
-```
--->
-
-A full list of supported settings and capabilities for this
-tap is available by running:
-
-```bash
-tap-personio --about
-```
+A full list of supported settings and capabilities is available by running: `tap-personio --about`
 
 ### Configure using environment variables
 
@@ -53,9 +47,10 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-<!--
-Developer TODO: If your tap requires special access on the source system, or any special authentication requirements, provide those here.
--->
+[Create a Personio API credential](https://developer.personio.de/docs/getting-started-with-the-personio-api) and
+configure `client_id` and `client_secret` settings.
+
+> Note: The tap will only have access to attributes whitelisted for the API credential
 
 ## Usage
 
