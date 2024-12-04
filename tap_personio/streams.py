@@ -90,6 +90,12 @@ class EmployeesStream(PersonioStream):
                         th.Property("percentage", th.NumberType())
                     )
                 )
+            elif personio_id == "supervisor":
+                json_type = th.ObjectType()
+            elif personio_id == "subcompany":
+                json_type = th.ObjectType()
+            elif personio_id == "office":
+                json_type = th.ObjectType()
             # note: the PersonioAPI is a mess, we probably need more here
 
             properties.append(th.Property(personio_id, json_type, description=attr["label"]))            
